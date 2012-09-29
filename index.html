@@ -1,0 +1,166 @@
+<!doctype html>
+<html dir="ltr" lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>ECMAScript 5</title>
+        <style>
+            body {
+                font: normal 100% sans-serif;
+            }
+
+            p, ul, pre {
+                font-size: 1.2em;
+            }
+
+            code {
+                background-color: #C00;
+                border-radius: 0.3em;
+                color: #FFF;
+                padding: 0.1em 0.5em;
+            }
+
+            a {
+                color: #999;
+                -webkit-transition: color .5s ease-out;
+                   -moz-transition: color .5s ease-out;
+                     -o-transition: color .5s ease-out;
+                        transition: color .5s ease-out;
+            }
+
+            a:hover,
+            a:focus {
+                color: #A52A2A;
+                text-decoration: none;
+            }
+
+            pre {
+                color: #00F;
+            }
+
+            script {
+                display: block; /* we set the display so we can copy contents via JavaScript - then we reset to 'none' via JavaScript */
+            }
+
+            .reset {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>ECMAScript 5: Tests</h1>
+        <p>Just some super basic tests of the new <code>Object</code> methods available in ES5 which I'm interested in using in a future project.</p>
+        <p>Note: for list of methods that cannot be 100% shim'ed see <a href="https://github.com/kriskowal/es5-shim">https://github.com/kriskowal/es5-shim</a></p>
+        <p>For compatability tables see: <a href="http://kangax.github.com/es5-compat-table/">http://kangax.github.com/es5-compat-table/</a></p>
+        <ul>
+            <li><code>Object.create</code></li>
+            <li><code>Object.defineProperty</code></li>
+            <li><code>Object.defineProperties</code></li>
+            <li><code>Object.getPrototypeOf</code></li>
+            <li><code>Object.keys</code></li>
+            <li><code>Object.getOwnPropertyNames</code></li>
+        </ul>
+        <pre id="js-script"></pre>
+        <script>
+            function log (arg) {
+                if (arguments.length > 1) {
+                    console.log(arguments);
+                } else {
+                    console.log(arg);
+                }
+            }
+
+            var base_object = Object.create(Object.prototype, {
+                name: {
+                    writable: true,
+                    enumerable: true,
+                    configurable: false
+                },
+                age: {
+                    writable: false,
+                    enumerable: false,
+                    configurable: true
+                },
+                speak: {
+                    writable: true,
+                    enumerable: true,
+                    configurable: true
+                }
+            });
+
+            base_object.speak = function(){
+                return 'Hi my name is ' + this.name;
+            };
+
+            log(base_object.name); // => undefined
+
+            base_object.name = "Mark"; // property is writable (as defined)
+
+            log(base_object.name); // => Mark
+
+            // Logs: name, speak
+            for (prop in base_object) {
+                log(prop, base_object[prop]); // as expected the 'age' property is non-enumerable (as defined)
+            }
+
+            try {
+                Object.defineProperty(base_object, 'name', {
+                    enumerable: false // => TypeError: Attempting to change enumerable attribute of unconfigurable property
+                });
+            } catch (err) {
+                log(err, err.message);
+            }
+
+            Object.defineProperty(base_object, 'age', {
+                enumerable: true
+            });
+
+            // Logs: name, speak, age
+            for (prop in base_object) {
+                log(prop, base_object[prop]); // as expected the 'age' property is now enumerable (as defined)
+            }
+
+            base_object.age = 30; // this will fail as this property is non-writable
+
+            log(base_object.age); // => undefined (as expected)
+
+            var new_object = Object.create(base_object); // create new object that inherits properties from 'base_object'
+
+            log(new_object); // no properties, but the prototype is set to point to 'base_object'
+
+            new_object.location = 'England'; // default attributes are { writable:true, enumerable:true, configurable:true }
+
+            log(base_object); // doesn't have a 'location' property as 'new_object' inherited its properties but is a unique object
+
+            /*
+                When defining properties in this way, if an attribute is not specified then the following defaults apply:
+                    - 'writable' is false 
+                    - 'enumerable' is false
+             */
+            Object.defineProperties(new_object, {
+                'occupation': {
+                    value: 'front-end engineer'
+                }
+            });
+
+            new_object.occupation = 'Manager'; // => 'front-end engineer' (as expected: as we defined it to be non-writable)
+
+            log('Object.getPrototypeOf(new_object)', Object.getPrototypeOf(new_object));
+
+            log('Object.keys(new_object)', Object.keys(new_object)); // => ['location'] (as expected: only 'enumerable' direct properties are displayed)
+
+            log('Object.getOwnPropertyNames(new_object)', Object.getOwnPropertyNames(new_object)); // => ['location', 'occupation'] (as expected: displays all direct properties whether they are enumerable or not)
+        </script>
+        <script>
+            // We'll take the content of the first <script> tag and display it in the page
+            var pre = document.getElementById('js-script');
+            var scripts = document.getElementsByTagName('script');
+            pre.innerHTML = scripts[0].innerHTML;
+            
+            // Now we'll reset the <script> tags (including this one) to have a display:none (so they don't appear visually in the page)
+            for (var i = 0; i < scripts.length; i++) {
+                scripts[i].className = 'reset';
+            }
+        </script>
+    </body>
+</html>

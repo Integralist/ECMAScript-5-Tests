@@ -49,7 +49,7 @@
     </head>
     <body>
         <h1>ECMAScript 5: Tests</h1>
-        <p>Just some super basic tests of the new <code>Object</code> methods available in ES5 which I'm interested in using in a future project.</p>
+        <p>Just some super basic tests of the new <code>Object</code> and <code>Array</code> methods available in ES5 which I'm interested in using in a future project.</p>
         <p>Note: for list of methods that cannot be 100% shim'ed see <a href="https://github.com/kriskowal/es5-shim">https://github.com/kriskowal/es5-shim</a></p>
         <p>For compatability tables see: <a href="http://kangax.github.com/es5-compat-table/">http://kangax.github.com/es5-compat-table/</a></p>
         <ul>
@@ -59,12 +59,26 @@
             <li><code>Object.getPrototypeOf</code></li>
             <li><code>Object.keys</code></li>
             <li><code>Object.getOwnPropertyNames</code></li>
+            <li><code>Array.isArray</code></li>
+            <li><code>Array.prototype.indexOf</code></li>
+            <li><code>Array.prototype.lastIndexOf</code></li>
+            <li><code>Array.prototype.every</code></li>
+            <li><code>Array.prototype.some</code></li>
+            <li><code>Array.prototype.forEach</code></li>
+            <li><code>Array.prototype.map</code></li>
+            <li><code>Array.prototype.filter</code></li>
+            <li><code>Array.prototype.reduce</code></li>
+            <li><code>Array.prototype.reduceRight</code></li>
         </ul>
         <pre id="js-script"></pre>
         <script>
             function log (arg) {
                 if (arguments.length > 1) {
-                    console.log(arguments);
+                    console.group(arguments[0] + ':');
+                        for (var i = 1; i < arguments.length; i++) {
+                            console.log(arguments[i]);
+                        }
+                    console.groupEnd();
                 } else {
                     console.log(arg);
                 }
@@ -92,11 +106,11 @@
                 return 'Hi my name is ' + this.name;
             };
 
-            log(base_object.name); // => undefined
+            log('base_object.name', base_object.name); // => undefined
 
             base_object.name = "Mark"; // property is writable (as defined)
 
-            log(base_object.name); // => Mark
+            log('base_object.name', base_object.name); // => Mark
 
             // Logs: name, speak
             for (prop in base_object) {
@@ -108,7 +122,7 @@
                     enumerable: false // => TypeError: Attempting to change enumerable attribute of unconfigurable property
                 });
             } catch (err) {
-                log(err, err.message);
+                log('Object.defineProperty(base_object, "name", { enumerable: false });', err, err.message);
             }
 
             Object.defineProperty(base_object, 'age', {
@@ -122,15 +136,16 @@
 
             base_object.age = 30; // this will fail as this property is non-writable
 
-            log(base_object.age); // => undefined (as expected)
+            log('age expected to be undefined', base_object.age); // => undefined (as expected)
 
             var new_object = Object.create(base_object); // create new object that inherits properties from 'base_object'
 
-            log(new_object); // no properties, but the prototype is set to point to 'base_object'
+            // Technically this will show properties in WebKit because WebKit shows final state of object rather than its *current* state?
+            log('no properties (WebKit log shows properties added after the fact)', new_object); // no properties, but the prototype is set to point to 'base_object'
 
             new_object.location = 'England'; // default attributes are { writable:true, enumerable:true, configurable:true }
-
-            log(base_object); // doesn't have a 'location' property as 'new_object' inherited its properties but is a unique object
+            
+            log('No location inherited', base_object); // doesn't have a 'location' property as 'new_object' inherited its properties but is a unique object
 
             /*
                 When defining properties in this way, if an attribute is not specified then the following defaults apply:
@@ -150,6 +165,122 @@
             log('Object.keys(new_object)', Object.keys(new_object)); // => ['location'] (as expected: only 'enumerable' direct properties are displayed)
 
             log('Object.getOwnPropertyNames(new_object)', Object.getOwnPropertyNames(new_object)); // => ['location', 'occupation'] (as expected: displays all direct properties whether they are enumerable or not)
+
+            var my_arr = ['a', 'b', 'c', 'd', 'b'];
+            var my_other_arr = [2, 4, 8, 10];
+
+            log('my_arr', my_arr);
+
+            log('my_other_arr', my_other_arr);
+
+            log('typeof my_arr', typeof my_arr);
+
+            log('Array.isArray(my_arr), Array.isArray({ test:123 })', Array.isArray(my_arr), Array.isArray({ test:123 }));
+
+            log('my_arr.indexOf("c")', my_arr.indexOf('c')); // => 2
+
+            log('my_arr.lastIndexOf("b")', my_arr.lastIndexOf('b')); // => 4
+
+            log('Testing Array.prototype.every');
+            
+            my_other_arr.every(function (element, index, array) {
+                log(element);
+                if (element > 0 && element < 8) {
+                    log('The above element returned true');
+                    return true;
+                } else {
+                    log('The above element returned false, hence the loop stopped there');
+                    return false; // technically unnecessary as the function would return undefined which is falsey
+                }
+            });
+
+            my_other_arr.every(function (element, index, array) {
+                log(element + ': the callback function on the first iteration specifically returned nothing, so the "every" method will fail after first iteration');
+            });
+
+            log('Testing Array.prototype.some');
+
+            var test_some = my_other_arr.some(function (element, index, array) {
+                if (element < 2) {
+                    log(element + ': this element returned true, hence the loop stopped there');
+                    return true;
+                } else {
+                    log(element + ': this element wasnt less that 2 and so returned false and the loop continued');
+                }
+            });
+
+            log('test_some ("some" method should return false in this instance)', test_some);
+
+            test_some = my_other_arr.some(function (element, index, array) {
+                if (element > 2) {
+                    log(element + ': this element returned true, hence the loop stopped after the first iteration');
+                    return true;
+                }
+            });
+
+            log('test_some ("some" method should return true in this instance)', test_some);
+
+            log('Testing Array.prototype.forEach');
+
+            my_other_arr.forEach(function (element, index, array) {
+                log(element);
+            });
+
+            log('Testing Array.prototype.map', my_other_arr);
+
+            var my_mapped_array = my_other_arr.map(function (element, index, array) {
+                return element + index; // on each iteration add the index to the element value
+            });
+
+            log('my_mapped_array', my_mapped_array);
+
+            log('Testing Array.prototype.filter', my_other_arr);
+
+            var my_filtered_array = my_other_arr.filter(function (element, index, array) {
+                if (element > 2 && element < 10) {
+                    return true;
+                }
+            });
+
+            log('my_filtered_array', my_filtered_array);
+
+            log('Testing Array.prototype.reduce', my_other_arr);
+
+            var my_reduced_array = my_other_arr.reduce(function (previousValue, currentValue, index, array) {
+                log('previousValue: ' + previousValue);
+                return previousValue + currentValue;
+                /*
+                    previousValue: 10
+                    previousValue: 12
+                    previousValue: 16
+                    previousValue: 24
+
+                    So the final reduced amount is: 34 
+                    This is worked out like so: the last element in the Array is 10, 
+                    and the previousValue on the last iteration would be 24, so 24+10 is 34
+                 */
+            }, 10);
+
+            log('my_reduced_array', my_reduced_array);
+
+            log('Testing Array.prototype.reduceRight', my_other_arr);
+
+            var my_reducedright_array = my_other_arr.reduceRight(function (previousValue, currentValue, index, array) {
+                log('previousValue: ' + previousValue);
+                return previousValue + currentValue;
+                /*
+                    previousValue: 10
+                    previousValue: 20
+                    previousValue: 28
+                    previousValue: 32
+
+                    So the final reduced amount is: 34 (remember this is the same as the reduce method but goes right-to-left order)
+                    This is worked out like so: the first element in the Array is 2, 
+                    and the previousValue on the last iteration would be 32, so 32+2 is 34
+                 */
+            }, 10);
+
+            log('my_reducedright_array', my_reducedright_array);
         </script>
         <script>
             // We'll take the content of the first <script> tag and display it in the page
